@@ -1,4 +1,6 @@
 const Book = require('../models/Book')
+const fs = require('fs')
+const path = require('path')
 
 exports.bookList = (req, res, next) => {
     Book.find()
@@ -54,16 +56,56 @@ exports.updateBook = (req, res, next) => {
               _id: req.params.id,
           }
         : { ...req.body, _id: req.params.id }
-    Book.updateOne({ _id: req.params.id, userId: req.auth.userId }, bookObject)
-        .then(() => res.status(200).json({ message: 'Livre modifié!' }))
+
+    Book.findOneAndUpdate(
+        { _id: req.params.id, userId: req.auth.userId },
+        bookObject
+    )
+        .then((oldBook) => {
+            const oldImageName = oldBook.imageUrl.split('/').pop()
+            const oldImagePath = path.join(
+                path.dirname(req.file.path),
+                oldImageName
+            )
+            fs.unlink(oldImagePath, (err) => {
+                if (err) {
+                    console.log(err)
+                    res.status(500).send(
+                        'Une erreur est survenue lors de la suppression de l image.'
+                    )
+                } else {
+                    res.status(200).json({ message: 'Livre modifié!' })
+                }
+            })
+        })
         .catch((error) => res.status(400).json({ error }))
 }
 
 //logique suppresion de livre sous id et authentification
 exports.deleteBook = (req, res, next) => {
-    Book.deleteOne({ _id: req.params.id, userId: req.auth.userId })
-        .then(() => res.status(200).json({ message: 'Livre supprimé!' }))
-        .catch((error) => res.status(400).json({ error }))
+    Book.findOneAndDelete({ _id: req.params.id, userId: req.auth.userId })
+        .then((oldBook) => {
+            const oldImageName = oldBook.imageUrl.split('/').pop()
+            const oldImagePath = path.join(
+                __dirname,
+                '..',
+                'images',
+                oldImageName
+            )
+            fs.unlink(oldImagePath, (err) => {
+                if (err) {
+                    console.log(err)
+                    res.status(500).send(
+                        'Une erreur est survenue lors de la suppression de l image.'
+                    )
+                } else {
+                    res.status(200).json({ message: 'Livre supprimé!' })
+                }
+            })
+        })
+        .catch((error) => {
+            res.status(400).json({ error })
+        })
 }
 //logique finalisation de création
 exports.created = (req, res, next) =>
