@@ -1,8 +1,38 @@
 const User = require('../models/User')
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
+const validator = require('email-validator')
+const passwordValidator = require('password-validator')
 
+//logique création user
 exports.signup = (req, res, next) => {
+    //verifiaction validité d'un email
+    if (!validator.validate(req.body.email)) {
+        return res.status(400).json({ message: 'email invalide' })
+    }
+    // Verification validité pwd
+    const schema = new passwordValidator()
+    schema
+        .is()
+        .min(4)
+        .is()
+        .max(100)
+        .has()
+        .uppercase()
+        .has()
+        .lowercase()
+        .has()
+        .digits(1)
+        .has()
+        .not()
+        .spaces()
+        .is()
+        .not()
+        .oneOf(['Passw0rd', 'Password123'])
+    if (!schema.validate(req.body.password)) {
+        return res.status(400).json({ message: 'password invalide' })
+    }
+
     bcrypt
         .hash(req.body.password, 10)
         .then((hash) => {
@@ -18,7 +48,7 @@ exports.signup = (req, res, next) => {
         })
         .catch((error) => res.status(500).json({ error }))
 }
-
+//logique d'authentification
 exports.login = (req, res, next) => {
     User.findOne({ email: req.body.email })
         .then((user) => {
@@ -39,7 +69,7 @@ exports.login = (req, res, next) => {
                         token: jwt.sign(
                             { userId: user._id },
                             process.env.JWT_TOKEN,
-                            { expiresIn: '24h' }
+                            { expiresIn: process.env.JWT_EXP }
                         ),
                         userId: user._id,
                     })

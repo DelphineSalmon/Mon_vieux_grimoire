@@ -42,7 +42,7 @@ exports.findBook = (req, res, next) => {
         .catch((error) => res.status(400).json({ error }))
 }
 
-//logique modif d'un livre sous id
+//logique modif d'un livre sous id et authentification
 exports.updateBook = (req, res, next) => {
     const bookObject = req.file
         ? {
@@ -54,14 +54,14 @@ exports.updateBook = (req, res, next) => {
               _id: req.params.id,
           }
         : { ...req.body, _id: req.params.id }
-    Book.updateOne({ _id: req.params.id }, bookObject)
+    Book.updateOne({ _id: req.params.id, userId: req.auth.userId }, bookObject)
         .then(() => res.status(200).json({ message: 'Livre modifié!' }))
         .catch((error) => res.status(400).json({ error }))
 }
 
-//logique suppresion de livre sous id
+//logique suppresion de livre sous id et authentification
 exports.deleteBook = (req, res, next) => {
-    Book.deleteOne({ _id: req.params.id })
+    Book.deleteOne({ _id: req.params.id, userId: req.auth.userId })
         .then(() => res.status(200).json({ message: 'Livre supprimé!' }))
         .catch((error) => res.status(400).json({ error }))
 }
