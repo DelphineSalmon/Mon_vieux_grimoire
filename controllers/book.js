@@ -8,7 +8,7 @@ exports.bookList = (req, res, next) => {
         .then((books) => res.status(200).json(books))
         .catch((error) => res.status(500).json({ error }))
 }
-
+// logique création d'un livre
 exports.addBook = (req, res, next) => {
     const bookObject = req.file
         ? {
@@ -22,17 +22,13 @@ exports.addBook = (req, res, next) => {
 
     const book = new Book({
         ...bookObject,
-        averageRating: 0,
-        ratings: [],
+        averageRating: bookObject.ratings[0].grade,
     })
 
-    book.save()
-        .then((book) => {
-            req.params.id = book._id
-            req.body.userId = req.auth.userId
-            req.body.rating = bookObject.ratings[0].grade
-
-            next()
+    book.ratings[0].userId = req.auth.userId
+    book.save() // enregistrement d'un livre
+        .then(() => {
+            res.status(201).json({ message: 'Livre enregistré!' })
         })
         .catch((error) => {
             res.status(400).json({ error })
@@ -46,7 +42,7 @@ exports.findBook = (req, res, next) => {
         .catch((error) => res.status(400).json({ error }))
 }
 
-//logique modif d'un livre sous id et authentification
+//logique modification d'un livre sous id et authentification
 exports.updateBook = (req, res, next) => {
     const bookObject = req.file
         ? {
@@ -69,9 +65,9 @@ exports.updateBook = (req, res, next) => {
                 path.dirname(req.file.path),
                 oldImageName
             )
+            // supprime l'ancienne photo
             fs.unlink(oldImagePath, (err) => {
                 if (err) {
-                    console.log(err)
                     res.status(500).send(
                         'Une erreur est survenue lors de la suppression de l image.'
                     )
@@ -99,7 +95,6 @@ exports.deleteBook = (req, res, next) => {
             )
             fs.unlink(oldImagePath, (err) => {
                 if (err) {
-                    console.log(err)
                     res.status(500).send(
                         'Une erreur est survenue lors de la suppression de l image.'
                     )
@@ -112,9 +107,6 @@ exports.deleteBook = (req, res, next) => {
             res.status(400).json({ error })
         })
 }
-//logique finalisation de création
-exports.created = (req, res, next) =>
-    res.status(201).json({ message: 'Livre enregistré!' })
 
 //logique notation sous id
 exports.rating = (req, res, next) => {
@@ -127,6 +119,7 @@ exports.rating = (req, res, next) => {
             if (book.ratings.find((rate) => rate.userId === userId)) {
                 res.status(400).json({ message: 'user already exit' })
             } else {
+                //calcul de la moyenne des notes
                 const avgRating =
                     book.ratings.reduce(
                         (acc, currentValue) => acc + currentValue.grade,
@@ -134,24 +127,25 @@ exports.rating = (req, res, next) => {
                     ) /
                     (book.ratings.length + 1)
 
-                return Book.updateOne(
+                return Book.findOneAndUpdate(
                     { _id: idBook },
                     {
                         $push: { ratings: { userId: userId, grade: rating } },
-                        averageRating: Math.round(avgRating),
-                    }
+                        averageRating: Math.round(avgRating), //arrondissement de la moyenne
+                    },
+                    { new: true } // retourne la nouvelle valeur
                 )
             }
         })
-        .then(() => next())
+        .then((book) => res.status(200).json(book))
         .catch((error) => res.status(400).json({ error }))
 }
 
 //logique des livres les mieux notes
 exports.bestRating = (req, res, next) => {
     Book.find()
-        .sort({ averageRating: 'desc' })
-        .limit(3)
+        .sort({ averageRating: 'desc' }) // affichage de la plus grande a la plus petite note
+        .limit(3) // limite à 3
         .then((books) => res.status(200).json(books))
         .catch((error) => res.status(400).json({ error }))
 }

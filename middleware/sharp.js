@@ -23,7 +23,6 @@ module.exports = (req, res, next) => {
                 sharp.cache(false)
                 fs.unlink(imagePath, (err) => {
                     if (err) {
-                        console.log(err)
                         res.status(500).send(
                             'Une erreur est survenue lors de la suppression de l image.'
                         )

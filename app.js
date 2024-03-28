@@ -29,7 +29,7 @@ mongoose
     .then(() => console.log('Connexion à MongoDB réussie !'))
     .catch(() => console.log(`Connexion à MongoDB échouée !`))
 
-//apply rate limiting
+//application de  rate limiting
 app.use(limiter)
 
 //static directory for images

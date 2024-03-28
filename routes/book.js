@@ -8,16 +8,8 @@ const bookCtrl = require('../controllers/book')
 const sharp = require('../middleware/sharp')
 
 router.get('/', bookCtrl.bookList)
-router.post('/:id/rating', auth, bookCtrl.rating, bookCtrl.findBook)
-router.post(
-    '/',
-    auth,
-    multer,
-    sharp,
-    bookCtrl.addBook,
-    bookCtrl.rating,
-    bookCtrl.created
-)
+router.post('/:id/rating', auth, bookCtrl.rating)
+router.post('/', auth, multer, sharp, bookCtrl.addBook)
 
 router.get('/bestrating', bookCtrl.bestRating)
 router.get('/:id', bookCtrl.findBook)

@@ -59,7 +59,7 @@ npm install
 
 La commande `npm start` lance la commande ` nodemon --env-file=.env server`
 
-Le fichier .env contient toutes les varaibles d'environnement neccessaire au projet:
+Le fichier .env contient toutes les variables d'environnement neccessaire au projet:
 
 -   USER_NAME => userName Mongo
 -   USER_PWD => mot de passe Mongo
