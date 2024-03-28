@@ -134,17 +134,16 @@ exports.rating = (req, res, next) => {
                     ) /
                     (book.ratings.length + 1)
 
-                Book.updateOne(
+                return Book.updateOne(
                     { _id: idBook },
                     {
                         $push: { ratings: { userId: userId, grade: rating } },
                         averageRating: Math.round(avgRating),
                     }
                 )
-                    .then(() => next())
-                    .catch((error) => res.status(400).json({ error }))
             }
         })
+        .then(() => next())
         .catch((error) => res.status(400).json({ error }))
 }
 
