@@ -19,7 +19,7 @@ module.exports = (req, res, next) => {
                     message: 'Erreur lors de l optimisation de l image',
                 })
             } else {
-                // Supprimer le fichier
+                // Supprimer l'ancien fichier
                 sharp.cache(false)
                 fs.unlink(imagePath, (err) => {
                     if (err) {

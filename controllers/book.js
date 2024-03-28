@@ -1,6 +1,7 @@
 const Book = require('../models/Book')
 const fs = require('fs')
 const path = require('path')
+const sanitize = require('mongo-sanitize')
 
 exports.bookList = (req, res, next) => {
     Book.find()
@@ -39,7 +40,8 @@ exports.addBook = (req, res, next) => {
 }
 //logique de recherche de livre sous id
 exports.findBook = (req, res, next) => {
-    Book.findOne({ _id: req.params.id })
+    const cleanBookId = sanitize(req.params.id)
+    Book.findOne({ _id: cleanBookId })
         .then((book) => res.status(200).json(book))
         .catch((error) => res.status(400).json({ error }))
 }
@@ -58,7 +60,7 @@ exports.updateBook = (req, res, next) => {
         : { ...req.body, _id: req.params.id }
 
     Book.findOneAndUpdate(
-        { _id: req.params.id, userId: req.auth.userId },
+        { _id: sanitize(req.params.id), userId: sanitize(req.auth.userId) },
         bookObject
     )
         .then((oldBook) => {
@@ -83,7 +85,10 @@ exports.updateBook = (req, res, next) => {
 
 //logique suppresion de livre sous id et authentification
 exports.deleteBook = (req, res, next) => {
-    Book.findOneAndDelete({ _id: req.params.id, userId: req.auth.userId })
+    const cleanBook = sanitize(req.params.id)
+    const cleanAuth = sanitize(req.auth.userId)
+
+    Book.findOneAndDelete({ _id: cleanBook, userId: cleanAuth })
         .then((oldBook) => {
             const oldImageName = oldBook.imageUrl.split('/').pop()
             const oldImagePath = path.join(
@@ -113,7 +118,7 @@ exports.created = (req, res, next) =>
 
 //logique notation sous id
 exports.rating = (req, res, next) => {
-    const idBook = req.params.id
+    const idBook = sanitize(req.params.id)
     const userId = req.body.userId
     const rating = req.body.rating
 

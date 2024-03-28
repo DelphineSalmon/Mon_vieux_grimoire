@@ -3,6 +3,7 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken')
 const validator = require('email-validator')
 const passwordValidator = require('password-validator')
+const sanitize = require('mongo-sanitize')
 
 //logique création user
 exports.signup = (req, res, next) => {
@@ -50,7 +51,8 @@ exports.signup = (req, res, next) => {
 }
 //logique d'authentification
 exports.login = (req, res, next) => {
-    User.findOne({ email: req.body.email })
+    const cleanEmail = sanitize(req.body.email)
+    User.findOne({ email: cleanEmail })
         .then((user) => {
             if (!user) {
                 return res
