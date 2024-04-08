@@ -35,7 +35,7 @@ exports.signup = (req, res, next) => {
     }
 
     bcrypt
-        .hash(req.body.password, 10)
+        .hash(req.body.password, 10) //hachage pwd
         .then((hash) => {
             const user = new User({
                 email: req.body.email,
@@ -43,8 +43,8 @@ exports.signup = (req, res, next) => {
             })
             return user.save()
         })
-        .then(() => res.status(201).json({ message: 'Utilisateur créé !' }))
-        .catch((error) => res.status(500).json({ error }))
+        .then(() => res.status(201).json({ message: 'Utilisateur créé !' })) //crée
+        .catch((error) => res.status(500).json({ error })) //erreur serveur
 }
 //logique d'authentification
 exports.login = (req, res, next) => {
@@ -54,7 +54,7 @@ exports.login = (req, res, next) => {
         .then((user) => {
             if (!user) {
                 return res
-                    .status(404)
+                    .status(404) // not found
                     .json({ message: 'Utilisateur non trouvé' })
             }
             currentUser = user
@@ -63,10 +63,11 @@ exports.login = (req, res, next) => {
         .then((valid) => {
             if (!valid) {
                 return res
-                    .status(400)
+                    .status(400) //bad request
                     .json({ message: 'Mot de passe incorrecte' })
             }
             res.status(200).json({
+                //requete valid
                 token: jwt.sign(
                     { userId: currentUser._id },
                     process.env.JWT_TOKEN,
@@ -77,5 +78,5 @@ exports.login = (req, res, next) => {
                 userId: currentUser._id,
             })
         })
-        .catch((error) => res.status(500).json({ error }))
+        .catch((error) => res.status(500).json({ error })) // erreur serveur
 }

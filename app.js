@@ -6,7 +6,7 @@ const path = require('path')
 const rateLimit = require('express-rate-limit')
 const app = express()
 
-//config rate limit
+//config rate limit pour controler le trafic
 const limiter = rateLimit({
     windowMs: 60 * 1000,
     limit: 100,
@@ -14,7 +14,7 @@ const limiter = rateLimit({
     legacyHeaders: false,
 })
 
-//extraction dans fichier .env des données de connection sensible//
+//recuperation des variables d'environnement des données de connection sensible defini dans .env//
 const userName = process.env.USER_NAME
 const pwd = process.env.USER_PWD
 const mongoServerName = process.env.MONGODB_NAME
@@ -29,15 +29,14 @@ mongoose
     .then(() => console.log('Connexion à MongoDB réussie !'))
     .catch(() => console.log(`Connexion à MongoDB échouée !`))
 
+//middelware générique
 //application de  rate limiting
 app.use(limiter)
 
-//static directory for images
-app.use('/images', express.static(path.join(__dirname, 'images')))
-// read body in json
+// utilisation du json dans le corps des requete
 app.use(express.json())
 
-// add response header server
+//  add response header server
 app.use((req, res, next) => {
     res.setHeader('Access-Control-Allow-Origin', '*')
     res.setHeader(
@@ -51,9 +50,11 @@ app.use((req, res, next) => {
     next()
 })
 
+// middelware lier a une url
+//répertoire statique pour les images
+app.use('/images', express.static(path.join(__dirname, 'images')))
 // routes
 app.use('/api/auth', userRoutes)
-
 app.use('/api/books', bookRoutes)
 
 module.exports = app

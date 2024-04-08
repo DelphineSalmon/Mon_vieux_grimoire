@@ -3,10 +3,11 @@ const fs = require('fs')
 const path = require('path')
 const sanitize = require('mongo-sanitize')
 
+//logique recherche des livres
 exports.bookList = (req, res, next) => {
     Book.find()
-        .then((books) => res.status(200).json(books))
-        .catch((error) => res.status(500).json({ error }))
+        .then((books) => res.status(200).json(books)) // requete ok
+        .catch((error) => res.status(500).json({ error })) //erreur serveur
 }
 // logique création d'un livre
 exports.addBook = (req, res, next) => {
@@ -28,18 +29,18 @@ exports.addBook = (req, res, next) => {
     book.ratings[0].userId = req.auth.userId
     book.save() // enregistrement d'un livre
         .then(() => {
-            res.status(201).json({ message: 'Livre enregistré!' })
+            res.status(201).json({ message: 'Livre enregistré!' }) // requete crée
         })
         .catch((error) => {
-            res.status(400).json({ error })
+            res.status(400).json({ error }) // bad request
         })
 }
 //logique de recherche de livre sous id
 exports.findBook = (req, res, next) => {
     const cleanBookId = sanitize(req.params.id)
     Book.findOne({ _id: cleanBookId })
-        .then((book) => res.status(200).json(book))
-        .catch((error) => res.status(400).json({ error }))
+        .then((book) => res.status(200).json(book)) // requete ok
+        .catch((error) => res.status(400).json({ error })) // bad request
 }
 
 //logique modification d'un livre sous id et authentification
@@ -53,30 +54,39 @@ exports.updateBook = (req, res, next) => {
               userId: req.auth.userId,
               _id: req.params.id,
           }
-        : { ...req.body, _id: req.params.id }
+        : { ...req.body, _id: req.params.id, userId: req.auth.userId }
 
     Book.findOneAndUpdate(
         { _id: sanitize(req.params.id), userId: sanitize(req.auth.userId) },
         bookObject
     )
         .then((oldBook) => {
-            const oldImageName = oldBook.imageUrl.split('/').pop()
-            const oldImagePath = path.join(
-                path.dirname(req.file.path),
-                oldImageName
-            )
-            // supprime l'ancienne photo
-            fs.unlink(oldImagePath, (err) => {
-                if (err) {
-                    res.status(500).send(
-                        'Une erreur est survenue lors de la suppression de l image.'
-                    )
-                } else {
-                    res.status(200).json({ message: 'Livre modifié!' })
-                }
-            })
+            if (!oldBook) {
+                res.status(400).json({ message: 'Livre non modifiable' }) //bad request
+            } else if (req.file) {
+                const oldImageName = oldBook.imageUrl.split('/').pop()
+                const oldImagePath = path.join(
+                    path.dirname(req.file.path),
+                    oldImageName
+                )
+                // supprime l'ancienne photo
+                fs.unlink(oldImagePath, (err) => {
+                    if (err) {
+                        res.status(500).send(
+                            // erreur serveur
+                            'Une erreur est survenue lors de la suppression de l image.'
+                        )
+                    } else {
+                        res.status(200).json({ message: 'Livre modifié!' }) // requête ok
+                    }
+                })
+            } else {
+                res.status(200).json({ message: 'Livre modifié!' }) //requête ok
+            }
         })
-        .catch((error) => res.status(400).json({ error }))
+        .catch((error) => {
+            res.status(400).json({ error }) // bad request
+        })
 }
 
 //logique suppresion de livre sous id et authentification
@@ -96,28 +106,29 @@ exports.deleteBook = (req, res, next) => {
             fs.unlink(oldImagePath, (err) => {
                 if (err) {
                     res.status(500).send(
+                        //erreur serveur
                         'Une erreur est survenue lors de la suppression de l image.'
                     )
                 } else {
-                    res.status(200).json({ message: 'Livre supprimé!' })
+                    res.status(200).json({ message: 'Livre supprimé!' }) //requete ok
                 }
             })
         })
         .catch((error) => {
-            res.status(400).json({ error })
+            res.status(403).json(error) //forbidden
         })
 }
 
 //logique notation sous id
 exports.rating = (req, res, next) => {
     const idBook = sanitize(req.params.id)
-    const userId = req.body.userId
+    const userId = sanitize(req.body.userId)
     const rating = req.body.rating
 
     Book.findOne({ _id: idBook })
         .then((book) => {
             if (book.ratings.find((rate) => rate.userId === userId)) {
-                res.status(400).json({ message: 'user already exit' })
+                res.status(400).json({ message: 'L utilisateur a déjà voté' }) //bad request
             } else {
                 //calcul de la moyenne des notes
                 const avgRating =
@@ -137,15 +148,15 @@ exports.rating = (req, res, next) => {
                 )
             }
         })
-        .then((book) => res.status(200).json(book))
-        .catch((error) => res.status(400).json({ error }))
+        .then((book) => res.status(200).json(book)) //requete ok
+        .catch((error) => res.status(400).json({ error })) //bad request
 }
 
 //logique des livres les mieux notes
 exports.bestRating = (req, res, next) => {
     Book.find()
-        .sort({ averageRating: 'desc' }) // affichage de la plus grande a la plus petite note
+        .sort({ averageRating: 'desc' }) // trie de la plus grande a la plus petite note
         .limit(3) // limite à 3
-        .then((books) => res.status(200).json(books))
-        .catch((error) => res.status(400).json({ error }))
+        .then((books) => res.status(200).json(books)) // requete Ok
+        .catch((error) => res.status(400).json({ error })) //bad requete
 }
