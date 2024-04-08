@@ -20,7 +20,7 @@ exports.addBook = (req, res, next) => {
             req.file.filename
         }`,
         userId: req.auth.userId,
-    }
+    } //construction de l'objet qui as la structure du model
 
     const book = new Book({
         ...bookObject,
@@ -46,8 +46,9 @@ exports.findBook = (req, res, next) => {
 
 //logique modification d'un livre sous id et authentification
 exports.updateBook = (req, res, next) => {
-    const bookObject = req.file
+    const bookObject = req.file // regarde si y as un ficher
         ? {
+              //si fichier , recuperation de img url
               ...JSON.parse(req.body.book),
               imageUrl: `${req.protocol}://${req.get('host')}/images/${
                   req.file.filename
@@ -55,7 +56,7 @@ exports.updateBook = (req, res, next) => {
               userId: req.auth.userId,
               _id: req.params.id,
           }
-        : { ...req.body, _id: req.params.id, userId: req.auth.userId }
+        : { ...req.body, _id: req.params.id, userId: req.auth.userId } //si pas fichier, construit sans img url
 
     Book.findOneAndUpdate(
         { _id: sanitize(req.params.id), userId: sanitize(req.auth.userId) },
